@@ -97,7 +97,6 @@ python analysis/significance/stats_table45.py
 
 # supporting analyses
 python analysis/duplicate_audit/dup_upper_bound_audit.py
-python analysis/failure_cases/localize.py
 ```
 
 | Directory | Contents |
@@ -105,7 +104,6 @@ python analysis/failure_cases/localize.py
 | `analysis/` | One generator per paper table/figure; `_common.py` holds the loader and the column layout the extractors feed ([README](analysis/README.md)) |
 | `analysis/significance/` | Bootstrap CIs, Wilcoxon, McNemar, non-inferiority, ablation tests ([README](analysis/significance/README.md)) |
 | `analysis/duplicate_audit/` | How much duplicate-flagged output is literally re-emitted text ([README](analysis/duplicate_audit/README.md)) |
-| `analysis/failure_cases/` | Every task the Librarian loses, split by localization outcome ([README](analysis/failure_cases/README.md)) |
 
 `third_party/` is byte-identical vendored upstream;
 `scripts/check_third_party_drift.py` fails on drift.

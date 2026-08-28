@@ -95,7 +95,7 @@ third_party/sweb_live_vendored/tmp/
 
 # ── Local-only researcher scratch ──────────────────────────────────
 # Ad-hoc working dirs and report dumps. The scripts worth keeping live
-# under analysis/{significance,duplicate_audit,failure_cases}.
+# under analysis/{significance,duplicate_audit}.
 scratch/
 reports/
 table45_stats.json

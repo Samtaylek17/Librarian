@@ -42,18 +42,16 @@ commented-out or never-included artifacts have been removed.)
 | Appendix prompt listings (`generated_prompts/`)       | `prepare_prompts_for_latex.py` |
 | Paired significance tests (all cost/pass claims)      | `significance/` (own README) |
 | Duplicate-output verbatim audit                       | `duplicate_audit/` (own README) |
-| Librarian failure-case analysis                       | `failure_cases/` (own README) |
 
 ## Analyses that read raw episodes
 
-Three sub-directories work straight off `logs/` instead of the CSVs, each with
+Two sub-directories work straight off `logs/` instead of the CSVs, each with
 its own README:
 
 | Directory | What it produces |
 |---|---|
 | `significance/` | Paired significance tests behind the "reduces cost, preserves pass rate" claims — bootstrap CIs, Wilcoxon, McNemar, non-inferiority, plus the leave-one-out ablation tests. |
 | `duplicate_audit/` | How much of the duplicate-flagged output is literally re-emitted text, i.e. how loose the paper's upper-bound duplicate count is. |
-| `failure_cases/` | Every task where the bare MAS passed and the Librarian variant failed, split by localization outcome, with per-case evidence dumps. |
 
 They resolve matrix log dirs through `EPISODE_LOG_PATH` (colon-separated,
 defaults to `<repo>/logs`), so archived main-results runs can live on another

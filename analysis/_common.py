@@ -13,7 +13,7 @@ TOKENEFF_TURNS_PATH = os.path.join(ROOT, "data", "turns_tokenefficiency.csv")
 
 
 # ── Raw episode logs ────────────────────────────────────────────────
-# Scripts that read raw episode JSON (the significance / audit / failure-case
+# Scripts that read raw episode JSON (the significance / audit
 # pipelines) resolve a matrix title through this search path. Matrices run in
 # this checkout land in ``<repo>/logs``; archived main-results matrices often
 # live on a separate volume. Point ``EPISODE_LOG_PATH`` at them, e.g.
