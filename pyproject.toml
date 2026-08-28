@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "efficient-multi-agent-swe"
+version = "0.1.0"
+description = "Efficient multi-agent systems for software engineering benchmarks"
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.27.0",
+    "pyyaml>=6.0.0",
+]
+
+[project.optional-dependencies]
+swe-bench = [
+    "datasets>=2.0.0",
+    "swebench>=3.0.0",
+]
+swe-bench-live = [
+    # Runtime deps of the vendored microsoft/SWE-bench-Live harness — only
+    # what evaluation/evaluation.py + launch.core.runtime + launch.scripts.parser
+    # transitively import (NOT the upstream pyproject's full optional set,
+    # which pulls langchain/langgraph for the curation path we don't use).
+    "datasets>=2.0.0",
+    "docker>=7.0.0",
+    "pydantic>=2.0.0",
+    # The HF Live parquets need pyarrow>=20 — older pyarrow throws
+    # "Repetition level histogram size mismatch" on load.
+    "pyarrow>=20.0.0",
+    # Required by docker SDK when DOCKER_HOST=ssh:// (distributed
+    # eval routes the harness's docker calls to a remote daemon).
+    # Without it the harness raises "Install paramiko package to
+    # enable ssh:// support" and every eval is silently scored 0.0.
+    "paramiko>=4.0.0",
+]
+# `all` is kept as an alias for the SWE-bench (Verified + Live) benchmarks
+# plus a remote-docker SSH transport (distributed eval).
+all = [
+    "datasets>=2.0.0",
+    "swebench>=3.0.0",
+    "docker>=7.0.0",
+    "pydantic>=2.0.0",
+    "pyarrow>=20.0.0",
+    # paramiko enables the docker SDK's DOCKER_HOST=ssh:// transport used by
+    # the optional --server-pool distributed eval path.
+    "paramiko>=4.0.0",
+]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/eval_pipeline"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

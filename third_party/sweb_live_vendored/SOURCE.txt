@@ -1,0 +1,42 @@
+Sources of the files in this directory (byte-identical copies of upstream):
+
+  evaluation/
+      Source repo: https://github.com/microsoft/SWE-bench-Live
+      Pinned to:   b304431d87aa989c8b9bc0177e2959e533ff5e0e (see COMMIT_PIN.txt)
+      Upstream path: evaluation/
+
+  launch/
+      Source repo: https://github.com/microsoft/RepoLaunch
+      Pinned to:   a624bd57f00c01833f38b1efa428dee67010126b (see COMMIT_PIN.txt)
+      Upstream path: launch/  (the inner Python package, not the repo root)
+      Vendored here because microsoft/SWE-bench-Live consumes RepoLaunch as a
+      git submodule; ``evaluation/evaluation.py`` does
+      ``sys.path.insert(0, os.path.join(os.getcwd(), "launch"))`` at import
+      time and then ``from launch.core.runtime import SetupRuntime``.
+
+  upstream_pyproject.toml
+      Source: microsoft/SWE-bench-Live :: pyproject.toml at the pin above.
+      Kept for dependency reference only — we do NOT ``pip install`` this
+      file. Its declared dependencies are mirrored in our top-level
+      pyproject.toml under the ``swe-bench-live`` extra.
+
+  LICENSE
+      microsoft/SWE-bench-Live :: LICENSE (MIT, Microsoft Corporation).
+      RepoLaunch ships under the same license.
+
+The harness is invoked from src/eval_pipeline/benchmarks/swe_bench_live.py
+by running, with cwd = third_party/sweb_live_vendored:
+
+  python -m evaluation.evaluation \
+      --dataset SWE-bench-Live/SWE-bench-Live \
+      --split lite \
+      --platform linux \
+      --patch_dir <preds.json> \
+      --output_dir <out> \
+      --workers 1 \
+      --overwrite 1 \
+      --instance_ids <id>
+
+The cwd is non-negotiable: evaluation.py uses ``os.getcwd()`` to put the
+sibling ``launch/`` package on sys.path. Running with a different cwd
+breaks the import chain.

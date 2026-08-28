@@ -1,0 +1,116 @@
+# ── Python ──────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+build/
+dist/
+pip-wheel-metadata/
+*.whl
+
+# Virtual envs
+.venv/
+venv/
+env/
+ENV/
+
+# Test / type / lint caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+.hypothesis/
+
+# ── IDE / editor ────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.fleet/
+
+# ── OS ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Notebooks ───────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.nbconvert.ipynb
+
+# ── Node (npm/nvm artifacts from in-container agent runs —
+#    nothing should land in the repo, but guard anyway) ─────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# ── LaTeX build artifacts (paper/ source is tracked; intermediates
+#    and the rebuilt PDF are not — paper/report.pdf is the
+#    intentional exception, kept tracked as the canonical output) ──
+*.aux
+*.bbl
+*.blg
+*.toc
+*.out
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.run.xml
+*.bcf
+paper/build/
+
+# ── Project: experiment outputs / agent runtime ────────────────────
+logs/
+*.log
+.env
+*.tmp
+*.bak
+*.tar.gz
+*.pid
+
+# Runtime caches / scratch dirs we use during dispatch
+.cache/
+.claude/
+
+# ── Vendored upstream — only ``third_party/`` is tracked.
+#    ``src/swebench/`` is the SWE-bench upstream we install for the
+#    harness; not part of our source. ────────────────────────────────
+src/swebench/
+
+# ── Ephemeral local caches / working files ─────────────────────────
+calls_cache.jsonl
+ep_index.jsonl
+third_party/sweb_live_vendored/tmp/
+
+# ── Local-only researcher scratch ──────────────────────────────────
+# Ad-hoc working dirs and report dumps. The scripts worth keeping live
+# under analysis/{significance,duplicate_audit,failure_cases}.
+scratch/
+reports/
+table45_stats.json
+# notes/
+# experiments_local/
+
+# Generated analysis artifacts (regenerate from logs/ — see analysis/README.md)
+# Scripts under analysis/ stay tracked; their loose outputs (jsonl/csv/md
+# dropped at the analysis/ root) and data/tables/figures dirs are ignored.
+analysis/*.csv
+analysis/*.jsonl
+analysis/*.md
+!analysis/README.md
+analysis/data/*.csv
+analysis/data/*.jsonl
+analysis/tables/
+analysis/figures/
+analysis/energy_decomposition/

@@ -1,0 +1,13 @@
+The files in this directory are verbatim copies from OpenHands
+(https://github.com/All-Hands-AI/OpenHands), pinned to commit
+
+    72194f19db6170e1f601c478c48869e38d27adef
+
+and are distributed under that project's MIT License. The authoritative
+license text is the LICENSE file of the upstream repository at the pinned
+commit:
+
+    https://github.com/All-Hands-AI/OpenHands/blob/72194f19db6170e1f601c478c48869e38d27adef/LICENSE
+
+These files are unmodified and are not covered by the MIT License at the root
+of this repository, which applies to our own source only.

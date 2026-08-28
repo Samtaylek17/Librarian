@@ -1,0 +1,29 @@
+# End-to-end smoke test. Runs every non-RAG baseline once on a single
+# SWE-bench Verified task to validate that each agent code path runs
+# end-to-end. Dispatch after touching agent code, before a real matrix.
+# 12 agents x 1 task x seed 0 = 12 runs.
+title: smoke_baselines
+log_dir: logs/smoke_baselines
+description: 'Smoke: every non-RAG baseline once on django__django-14631.'
+base:
+  benchmark: swe_bench
+  model: Qwen/Qwen3.6-35B-A3B-FP8
+  max_observation_length: 30000
+  max_iterations: 1000
+  run_timeout: 3600
+matrix:
+  agent:
+    - vanilla
+    - hyperagent
+    - hyperagent_caveman
+    - hyperagent_lastn
+    - hyperagent_librarian
+    - hyperagent_librarian_caveman
+    - hyperagent_exec_librarian
+    - boad
+    - boad_caveman
+    - boad_lastn
+    - boad_librarian
+    - boad_librarian_caveman
+  task_id: [django__django-14631]
+  seed: [0]

@@ -1,0 +1,17 @@
+# Minimal experiment-matrix template. Run with:
+#   python scripts/run_matrix.py --spec configs/experiments/example.yaml \
+#     --urls http://localhost:8000/v1 --reset-prefix-cache
+#
+# `title` -> log_dir defaults to logs/<title>. Keep `model`/`base_url` out of
+# the spec when using run_matrix.py: the URL pool is injected at dispatch time.
+title: example
+base:                               # inherited by every run
+  benchmark: swe_bench
+  model: Qwen/Qwen3.6-35B-A3B-FP8   # paper backbones: 35B-A3B / 27B-FP8
+  max_observation_length: 16000
+  max_iterations: 1000
+  run_timeout: 1800
+matrix:                             # Cartesian product -> one run per cell
+  agent: [boad, boad_librarian]
+  task_id: [django__django-14631, pylint-dev__pylint-7080]
+  seed: [0]

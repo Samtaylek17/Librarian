@@ -1,0 +1,6 @@
+72194f19db6170e1f601c478c48869e38d27adef
+Repo: All-Hands-AI/OpenHands
+Commit date: 2026-04-06
+Files vendored:
+  openhands/runtime/utils/bash.py
+  openhands/runtime/utils/bash_constants.py

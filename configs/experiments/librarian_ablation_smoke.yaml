@@ -1,0 +1,22 @@
+title: librarian_ablation_smoke
+description: 'Smoke: all 8 ablation agents on one fast task (sympy-13480, 76s vanilla mean).'
+base:
+  benchmark: swe_bench
+  model: Qwen/Qwen3.6-27B-FP8
+  max_observation_length: 30000
+  max_iterations: 1000
+  run_timeout: 7200
+matrix:
+  agent:
+  - hyperagent_librarian_nopersist
+  - hyperagent_librarian_nopointer
+  - hyperagent_librarian_noscope
+  - hyperagent_librarian_nofresh
+  - boad_librarian_nopersist
+  - boad_librarian_nopointer
+  - boad_librarian_noscope
+  - boad_librarian_nofresh
+  task_id:
+  - sympy__sympy-13480
+  seed:
+  - 0

@@ -1,0 +1,36 @@
+# Distributed docker-eval server pool. Site-specific — replace the host names,
+# slot counts and disk budgets with your own machines, or drop the file and run
+# every container on the local daemon.
+#
+# The orchestrator (run_matrix.py) runs on one machine while ALL agent-run and
+# eval containers are routed to the remote daemons below via
+# DOCKER_HOST=ssh://<host>. Keep the orchestrator host out of the pool.
+#
+# Safety: reserve() blocks when all slots are full — with fallback_local: false
+# it never silently falls back to the local daemon.
+servers:
+  worker-1:
+    docker_host: ssh://worker-1
+    max_concurrent: 8
+    disk_budget_gb: 380
+    prune_age: 4h
+  worker-2:
+    docker_host: ssh://worker-2
+    max_concurrent: 8
+    disk_budget_gb: 800
+    prune_age: 4h
+  worker-3:
+    docker_host: ssh://worker-3
+    max_concurrent: 6
+    disk_budget_gb: 500
+    prune_age: 4h
+  worker-4:
+    docker_host: ssh://worker-4
+    max_concurrent: 8
+    disk_budget_gb: 350
+    prune_age: 4h
+
+routing:
+  strategy: least_loaded_dynamic
+  fallback_local: false   # never fall back to the orchestrator's local docker
+  enable: true

@@ -1,0 +1,58 @@
+Across base->+Librarian LOSSES (base pass, lib fail):
+  n=112
+  same     : 62
+  partial  : 29
+  disjoint : 11
+  empty    : 10
+
+  same     = lib edited exactly the gold source file(s) -> localization OK, edit wrong
+  partial  = overlap but not identical
+  disjoint = lib edited a completely different source file -> MIS-LOCALIZED
+  empty    = lib produced no source edit (only tests / nothing)
+
+--- DISJOINT (mis-localized) cases ---
+  35B-A3B/HyperAgent django__django-13158
+       gold:['django/db/models/sql/compiler.py']
+        lib:['django/db/models/sql/query.py']
+  35B-A3B/HyperAgent sympy__sympy-17630
+       gold:['sympy/matrices/expressions/matexpr.py']
+        lib:['sympy/matrices/expressions/blockmatrix.py']
+  35B-A3B/HyperAgent sympy__sympy-21379
+       gold:['sympy/core/mod.py']
+        lib:['sympy/functions/elementary/hyperbolic.py', 'sympy/functions/elementary/piecewise.py']
+  35B-A3B/BOAD matplotlib__matplotlib-20826
+       gold:['lib/matplotlib/axis.py']
+        lib:['lib/matplotlib/axes/_base.py']
+  35B-A3B/BOAD pydata__xarray-6938
+       gold:['xarray/core/variable.py']
+        lib:['xarray/core/dataset.py']
+  35B-A3B/BOAD pylint-dev__pylint-7080
+       gold:['pylint/lint/expand_modules.py', 'tests/lint/unittest_expand_modules.py']
+        lib:['pylint/lint/pylinter.py']
+  35B-A3B/BOAD scikit-learn__scikit-learn-14629
+       gold:['sklearn/multioutput.py']
+        lib:['sklearn/model_selection/_validation.py']
+  35B-A3B/BOAD sphinx-doc__sphinx-9591
+       gold:['sphinx/domains/python.py']
+        lib:['sphinx/ext/autodoc/__init__.py', 'tests/roots/test-ext-autodoc/target/properties.py']
+  27B/HyperAgent django__django-12193
+       gold:['django/forms/widgets.py']
+        lib:['django/contrib/postgres/forms/array.py']
+  27B/BOAD scikit-learn__scikit-learn-14629
+       gold:['sklearn/multioutput.py']
+        lib:['sklearn/model_selection/_validation.py']
+  27B/BOAD sympy__sympy-21379
+       gold:['sympy/core/mod.py']
+        lib:['sympy/functions/elementary/hyperbolic.py']
+
+--- EMPTY (no source edit) cases ---
+  35B-A3B/HyperAgent django__django-11815  gold:['django/db/migrations/serializer.py'] lib:[]
+  35B-A3B/HyperAgent django__django-12754  gold:['django/db/migrations/autodetector.py'] lib:[]
+  35B-A3B/HyperAgent matplotlib__matplotlib-24026  gold:['lib/matplotlib/stackplot.py'] lib:[]
+  35B-A3B/HyperAgent sphinx-doc__sphinx-7454  gold:['sphinx/domains/python.py'] lib:[]
+  35B-A3B/HyperAgent sphinx-doc__sphinx-8120  gold:['sphinx/application.py'] lib:[]
+  27B/HyperAgent astropy__astropy-7671  gold:['astropy/utils/introspection.py'] lib:[]
+  27B/HyperAgent matplotlib__matplotlib-24026  gold:['lib/matplotlib/stackplot.py'] lib:[]
+  27B/HyperAgent sympy__sympy-23413  gold:['sympy/polys/matrices/normalforms.py'] lib:[]
+  27B/BOAD sphinx-doc__sphinx-8120  gold:['sphinx/application.py'] lib:[]
+  27B/BOAD sympy__sympy-13031  gold:['sympy/matrices/sparse.py'] lib:[]

@@ -1,0 +1,16 @@
+This repository contains files copied verbatim from third-party open-source
+projects. They live under `third_party/`, are unmodified, and remain under
+their own licenses. Each subdirectory records the upstream commit it was
+taken from in `COMMIT_PIN.txt`.
+
+- `third_party/openhands_vendored/`, `third_party/openhands_legacy_vendored/`
+  From OpenHands (https://github.com/All-Hands-AI/OpenHands), MIT License.
+  See `LICENSE.upstream.txt` in each directory for the pinned commit and a
+  link to the authoritative upstream license text.
+
+- `third_party/sweb_live_vendored/`
+  From SWE-bench-Live (https://github.com/microsoft/SWE-bench-Live), MIT
+  License, Copyright (c) Microsoft Corporation. See
+  `third_party/sweb_live_vendored/LICENSE`.
+
+Everything outside `third_party/` is covered by the MIT License in LICENSE.
