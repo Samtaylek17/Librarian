@@ -1,8 +1,8 @@
 # Long Live the Librarian — code & experiments
 
-Evaluation framework for the paper *"Long Live the Librarian! A Persistent
+Official implementation of the paper ["Long Live the Librarian! A Persistent
 Search Sub-Agent for Energy-Efficient Multi-Agent Software Engineering
-Systems."*
+Systems."](https://arxiv.org/abs/2605.27787) accepted by EMNLP main conference 2026.
 
 LLM coding agents run in Docker, produce patches, and are scored by the
 original benchmark harness. A data pipeline records per-LLM-call tokens
