@@ -20,6 +20,8 @@
 #   VLLM_IMAGE  librarian-vllm:0.19.1       image built by build_vllm_image.sh
 #   VLLM_HF_CACHE <repo>/.cache/huggingface checkpoint cache on large storage
 #   VLLM_CACHE    <repo>/.cache/vllm        persistent compile cache
+#   VLLM_TMPDIR   <repo>/.cache/tmp         bash / docker / vLLM scratch
+#                                           (do not use OS /tmp on shared nodes)
 
 set -euo pipefail
 
@@ -33,7 +35,12 @@ VLLM_MODEL="${VLLM_MODEL:-Qwen/Qwen3.6-35B-A3B-FP8}"
 VLLM_IMAGE="${VLLM_IMAGE:-librarian-vllm:0.19.1}"
 VLLM_HF_CACHE="${VLLM_HF_CACHE:-$REPO_ROOT/.cache/huggingface}"
 VLLM_CACHE="${VLLM_CACHE:-$REPO_ROOT/.cache/vllm}"
+# Shared-node OS disks are often full; here-docs and container /tmp must
+# live on the same volume as the repo (typically /raid), not /.
+VLLM_TMPDIR="${VLLM_TMPDIR:-$REPO_ROOT/.cache/tmp}"
+export TMPDIR="$VLLM_TMPDIR"
 LOCK_FILE="$REPO_ROOT/scripts/serving/reproduction_lock.json"
+mkdir -p "$VLLM_HF_CACHE" "$VLLM_CACHE" "$VLLM_TMPDIR"
 
 if [ -z "${CUDA_VISIBLE_DEVICES:-}" ] || [[ "$CUDA_VISIBLE_DEVICES" == *,* ]]; then
     echo "ERROR: set CUDA_VISIBLE_DEVICES to exactly one GPU (for example, 0)."
@@ -71,7 +78,7 @@ if ! IMAGE_ID="$(docker image inspect --format '{{.Id}}' "$VLLM_IMAGE" 2>/dev/nu
     exit 1
 fi
 
-mkdir -p "$VLLM_HF_CACHE" "$VLLM_CACHE" "$REPO_ROOT/logs/serving"
+mkdir -p "$REPO_ROOT/logs/serving"
 SERVER_LOG="$REPO_ROOT/logs/serving/vllm_${VLLM_PORT}_$(date -u +%Y%m%dT%H%M%SZ).log"
 REPO_COMMIT="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || echo unknown)"
 if [ -n "$(git -C "$REPO_ROOT" status --porcelain 2>/dev/null)" ]; then
@@ -119,6 +126,7 @@ docker run --rm \
     --publish "$VLLM_PORT:8000" \
     --volume "$VLLM_HF_CACHE:/root/.cache/huggingface" \
     --volume "$VLLM_CACHE:/root/.cache/vllm" \
+    --volume "$VLLM_TMPDIR:/tmp" \
     "${DOCKER_ENV[@]}" \
     "$IMAGE_ID" \
     serve "$VLLM_MODEL" \

@@ -168,6 +168,15 @@ def _safe_package_version(name: str) -> str | None:
 
 
 def _redacted_argv(argv: list[str]) -> list[str]:
+    sensitive_options = {
+        "--access-token",
+        "--api-key",
+        "--auth-token",
+        "--hf-token",
+        "--password",
+        "--secret",
+        "--token",
+    }
     redacted: list[str] = []
     redact_next = False
     for arg in argv:
@@ -175,8 +184,8 @@ def _redacted_argv(argv: list[str]) -> list[str]:
             redacted.append("<redacted>")
             redact_next = False
             continue
-        lowered = arg.lower()
-        if any(key in lowered for key in ("api-key", "token", "secret")):
+        option = arg.split("=", 1)[0].lower()
+        if option in sensitive_options:
             if "=" in arg:
                 redacted.append(arg.split("=", 1)[0] + "=<redacted>")
             else:

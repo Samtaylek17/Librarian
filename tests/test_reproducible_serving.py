@@ -125,6 +125,15 @@ def test_fingerprint_arguments_ignore_port_and_redact_secrets():
     assert "<redacted>" in first
 
 
+def test_redaction_preserves_benign_token_related_options():
+    argv = _argv() + [
+        "--enable-prompt-tokens-details",
+        "--enable-auto-tool-choice",
+    ]
+
+    assert vllm_with_energy._redacted_argv(argv) == argv
+
+
 def test_server_pool_accepts_identical_fingerprints():
     first = _server()
     second = _server()
