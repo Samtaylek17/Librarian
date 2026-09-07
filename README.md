@@ -30,16 +30,29 @@ chat-completions endpoint. Agent names are in
 
 ## Experiments
 
-**Serve vLLM** with the energy endpoint. One GPU per worker.
+**Serve vLLM** with the energy endpoint. One GPU per worker. Serving is kept
+outside the evaluation virtualenv and is pinned to an immutable vLLM 0.19.1
+container plus full Hugging Face checkpoint revisions.
 
 ```bash
+scripts/serving/build_vllm_image.sh        # once; distribute this exact image
 CUDA_VISIBLE_DEVICES=0 VLLM_PORT=8000 scripts/serving/vllm_serve_energy.sh
+
+# In a second shell, before any reportable run:
+scripts/serving/validate_vllm_server.py \
+    --base-url http://localhost:8000/v1 \
+    --expected-model Qwen/Qwen3.6-35B-A3B-FP8
 ```
 
 The script wraps `scripts/serving/vllm_with_energy.py`, which adds
 `GET /energy` (per-GPU cumulative mJ via NVML) on the serving port. Without it
 `episode.energy` stays `None`. It also exports `VLLM_SERVER_DEV_MODE=1`, which
 `POST /reset_prefix_cache` requires — otherwise joules leak across episodes.
+`GET /experiment-info` exposes the non-secret serving fingerprint recorded in
+each matrix manifest. Formal dispatch aborts if workers differ or if a resumed
+matrix used another fingerprint. Pilot output is not reportable; after it
+passes, leave the serving image and flags unchanged for the full matrix. See
+[the reproducible-serving runbook](docs/reproducible_serving.md).
 
 **One episode:**
 

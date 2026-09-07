@@ -29,6 +29,12 @@ Verified empirically across the matrix run: every one of 2,507 LLM
 calls reported exactly 1 GPU in `joules_per_gpu`, confirming TP=1
 allocation and per-GPU isolation throughout.
 
+For new Qwen3.6 reproduction runs, this is also enforced before dispatch:
+`GET /experiment-info` reports the immutable serving fingerprint and exactly
+one GPU, and `run_matrix.py` aborts if any worker differs. The manifest records
+the full per-worker metadata. See `docs/reproducible_serving.md` for the frozen
+container, checkpoint revisions, validation pilot, and restart policy.
+
 ## What is *not* isolated (must be flagged)
 
 | Source | Mechanism | Mitigation in this codebase |

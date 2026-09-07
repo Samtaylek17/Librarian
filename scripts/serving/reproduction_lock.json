@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "reproduction_status": "reconstructed reproduction using vLLM 0.19.1",
+  "vllm_version": "0.19.1",
+  "minimum_vllm_version": "0.19.0",
+  "tool_call_parser": "qwen3_xml",
+  "base_image": "vllm/vllm-openai:v0.19.1@sha256:89c1d0629d377daa3f7f369cbea6167a7b48ea89aaacd12555e2b0b2f7f740d3",
+  "platform": "linux/amd64",
+  "models": {
+    "Qwen/Qwen3.6-35B-A3B-FP8": "95a723d08a9490559dae23d0cff1d9466213d989",
+    "Qwen/Qwen3.6-27B-FP8": "e89b16ebf1988b3d6befa7de50abc2d76f26eb09"
+  }
+}

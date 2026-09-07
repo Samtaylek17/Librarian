@@ -1,0 +1,19 @@
+FROM vllm/vllm-openai:v0.19.1@sha256:89c1d0629d377daa3f7f369cbea6167a7b48ea89aaacd12555e2b0b2f7f740d3
+
+LABEL org.opencontainers.image.title="Librarian reproducible vLLM server"
+LABEL org.opencontainers.image.version="0.19.1"
+LABEL org.opencontainers.image.description="Pinned Qwen3.6 experiment server with NVML energy instrumentation"
+
+COPY vllm_with_energy.py /opt/librarian/vllm_with_energy.py
+
+# Fail the build if a future base-image substitution omits the energy probe's
+# only extra runtime dependency. The official vLLM image already supplies it.
+RUN python3 -c "import pynvml"
+
+ENV VLLM_EXPECTED_VERSION=0.19.1 \
+    VLLM_MIN_VERSION=0.19.0 \
+    VLLM_EXPECTED_TOOL_PARSER=qwen3_xml \
+    VLLM_EXPECTED_GPU_COUNT=1 \
+    LIBRARIAN_REPRODUCTION_STATUS="reconstructed reproduction using vLLM 0.19.1"
+
+ENTRYPOINT ["python3", "/opt/librarian/vllm_with_energy.py"]

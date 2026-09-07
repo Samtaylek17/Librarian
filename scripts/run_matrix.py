@@ -19,7 +19,9 @@ from __future__ import annotations
 
 import argparse
 import itertools
+import json
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -93,11 +95,98 @@ def probe_url(url: str, timeout: float = 5.0) -> str | None:
     return None
 
 
-def is_url_healthy(url: str, timeout: float = 5.0) -> bool:
+def _get_json(url: str, timeout: float = 5.0) -> dict:
+    with urllib.request.urlopen(url, timeout=timeout) as response:
+        body = json.load(response)
+    if not isinstance(body, dict):
+        raise ValueError(f"{url} returned a non-object JSON response")
+    return body
+
+
+def probe_server(url: str, timeout: float = 5.0) -> dict:
+    """Fetch the model identity and immutable experiment fingerprint."""
+    api_url = url.rstrip("/")
+    root_url = api_url.removesuffix("/v1")
+    models = _get_json(f"{api_url}/models", timeout=timeout)
+    info = _get_json(f"{root_url}/experiment-info", timeout=timeout)
+    return {
+        "url": url,
+        "model_ids": [item.get("id") for item in models.get("data") or []],
+        "experiment_info": info,
+    }
+
+
+def validate_server_pool(
+    servers: list[dict], expected_model: str | None = None,
+) -> str:
+    if not servers:
+        raise ValueError("no server fingerprints were collected")
+    errors: list[str] = []
+    fingerprints: set[str] = set()
+    for server in servers:
+        url = server.get("url", "<unknown>")
+        model_ids = server.get("model_ids") or []
+        info = server.get("experiment_info") or {}
+        fingerprint = info.get("fingerprint")
+        if not isinstance(fingerprint, str) or not re.fullmatch(
+            r"[0-9a-f]{64}", fingerprint,
+        ):
+            errors.append(f"{url}: missing or invalid experiment fingerprint")
+        else:
+            fingerprints.add(fingerprint)
+        if info.get("gpu_count") != 1:
+            errors.append(f"{url}: expected one GPU, found {info.get('gpu_count')!r}")
+        if not re.fullmatch(r"sha256:[0-9a-f]{64}", info.get("image_digest", "")):
+            errors.append(f"{url}: image digest is not recorded")
+        if not re.fullmatch(
+            r"[0-9a-f]{40}", info.get("repository_commit", ""),
+        ):
+            errors.append(f"{url}: repository commit is not a full commit SHA")
+        if info.get("repository_dirty") is not False:
+            errors.append(f"{url}: repository working tree is dirty")
+        revision = info.get("model_revision")
+        if not isinstance(revision, str) or not re.fullmatch(
+            r"[0-9a-f]{40}", revision,
+        ):
+            errors.append(f"{url}: model revision is not a full commit SHA")
+        if info.get("tokenizer_revision") != revision:
+            errors.append(f"{url}: tokenizer and model revisions differ")
+        if expected_model:
+            if info.get("model") != expected_model:
+                errors.append(
+                    f"{url}: metadata model {info.get('model')!r} does not "
+                    f"match matrix model {expected_model!r}"
+                )
+            if expected_model not in model_ids:
+                errors.append(
+                    f"{url}: /models advertises {model_ids!r}, expected "
+                    f"{expected_model!r}"
+                )
+    if len(fingerprints) > 1:
+        errors.append(
+            "server compatibility fingerprints differ: "
+            + ", ".join(sorted(fingerprints))
+        )
+    if errors:
+        raise ValueError("serving preflight failed:\n  - " + "\n  - ".join(errors))
+    return next(iter(fingerprints))
+
+
+def is_url_healthy(
+    url: str,
+    timeout: float = 5.0,
+    expected_fingerprint: str | None = None,
+) -> bool:
     probe = url.rstrip("/") + "/models"
     try:
         with urllib.request.urlopen(probe, timeout=timeout) as r:
-            return r.status == 200
+            if r.status != 200:
+                return False
+        if expected_fingerprint is not None:
+            root_url = url.rstrip("/").removesuffix("/v1")
+            info = _get_json(f"{root_url}/experiment-info", timeout=timeout)
+            return info.get("fingerprint") == expected_fingerprint
+        return True
     except Exception:
         return False
 
@@ -124,7 +213,9 @@ def _capture_git_state(repo_root: Path) -> dict:
 
 
 def write_manifest(*, spec: dict, spec_path: str, args, urls: list[str],
-                   runs: list[dict], root_log: Path) -> Path:
+                   runs: list[dict], root_log: Path,
+                   servers: list[dict] | None = None,
+                   serving_fingerprint: str | None = None) -> Path:
     import json as _json
     import time as _time
     manifest_path = root_log / "_manifest.json"
@@ -136,6 +227,25 @@ def write_manifest(*, spec: dict, spec_path: str, args, urls: list[str],
     else:
         data = {}
 
+    previous_fingerprint = data.get("serving_fingerprint")
+    if data.get("dispatch_runs") and serving_fingerprint and not previous_fingerprint:
+        raise SystemExit(
+            "Refusing to resume a matrix whose existing manifest has no "
+            "serving fingerprint. Use a new log directory and restart the "
+            "entire matrix."
+        )
+    if (
+        previous_fingerprint
+        and serving_fingerprint
+        and previous_fingerprint != serving_fingerprint
+    ):
+        raise SystemExit(
+            "Refusing to mix serving environments in an existing matrix: "
+            f"manifest has {previous_fingerprint}, servers report "
+            f"{serving_fingerprint}. Use a new log directory or restart the "
+            "entire matrix."
+        )
+
     data.setdefault("title", spec.get("title") or Path(spec_path).stem)
     desc = spec.get("description")
     if desc and "description" not in data:
@@ -143,6 +253,13 @@ def write_manifest(*, spec: dict, spec_path: str, args, urls: list[str],
     data.setdefault("spec_path", str(spec_path))
     data.setdefault("spec", spec)
     data.setdefault("dispatch_runs", [])
+    if serving_fingerprint:
+        data.setdefault("serving_fingerprint", serving_fingerprint)
+    if servers:
+        data.setdefault(
+            "reproduction_status",
+            servers[0]["experiment_info"].get("reproduction_status"),
+        )
 
     data["dispatch_runs"].append({
         "started_at": _time.strftime("%Y-%m-%dT%H:%M:%S%z"),
@@ -151,6 +268,8 @@ def write_manifest(*, spec: dict, spec_path: str, args, urls: list[str],
         "urls": urls,
         "reset_prefix_cache": bool(args.reset_prefix_cache),
         "git": _capture_git_state(REPO_ROOT),
+        "serving_fingerprint": serving_fingerprint,
+        "servers": servers or [],
     })
 
     manifest_path.write_text(_json.dumps(data, indent=2, default=str) + "\n")
@@ -422,7 +541,8 @@ def worker_loop(url: str, plan: list[tuple[int, dict]],
                 lock: threading.Lock, state: dict,
                 reset_before: bool = False,
                 router: DispatchRouter | None = None,
-                max_attempts: int = 3) -> None:
+                max_attempts: int = 3,
+                serving_fingerprint: str | None = None) -> None:
     counter = state["counter"]
     in_progress: set[str] = state["in_progress"]
     attempts: dict[str, int] = state["attempts"]
@@ -430,7 +550,25 @@ def worker_loop(url: str, plan: list[tuple[int, dict]],
     unhealthy_since: float | None = None
 
     while True:
-        if not is_url_healthy(url):
+        if state.get("fatal_error"):
+            return
+        if not is_url_healthy(url, expected_fingerprint=serving_fingerprint):
+            if serving_fingerprint is not None:
+                try:
+                    current = probe_server(url)["experiment_info"].get("fingerprint")
+                except Exception:
+                    current = None
+                if current is not None and current != serving_fingerprint:
+                    message = (
+                        f"Serving fingerprint changed during the matrix at {url}: "
+                        f"expected {serving_fingerprint}, found {current}. Stop and "
+                        "restart the entire matrix in a new log directory."
+                    )
+                    with lock:
+                        state["fatal_error"] = message
+                        unhealthy_urls.add(url)
+                        print(f"[FATAL] {message}")
+                    return
             now = time.time()
             if unhealthy_since is None:
                 unhealthy_since = now
@@ -530,7 +668,13 @@ def worker_loop(url: str, plan: list[tuple[int, dict]],
         if router is not None and server is not None:
             router.release(server.name)
 
-        url_dead_after = (rc != 0 and rc != 3 and not is_url_healthy(url))
+        url_dead_after = (
+            rc != 0
+            and rc != 3
+            and not is_url_healthy(
+                url, expected_fingerprint=serving_fingerprint,
+            )
+        )
 
         queued_eval = False
         if (run_phase == "agent" and rc == 0 and not timed_out):
@@ -604,7 +748,8 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true",
                     help="Print expansion and partitioning, then exit")
     ap.add_argument("--no-probe", action="store_true",
-                    help="Skip /v1/models liveness probe of URLs")
+                    help="Skip server probes for --dry-run only. Formal runs "
+                         "always enforce serving fingerprints.")
     ap.add_argument("--reset-prefix-cache", action="store_true",
                     help="POST /reset_prefix_cache before each run (requires "
                          "vLLM launched with VLLM_SERVER_DEV_MODE=1). Prevents "
@@ -640,17 +785,42 @@ def main() -> int:
             "mandatory (single-shot inline eval has been removed)."
         )
 
-    urls = load_urls(args)
-    for u in urls:
-        model_id = probe_url(u)
-        if model_id is None:
-            print(f"[WARN] {u} unreachable at startup — worker will retry "
-                  f"via 30s health-check loop", file=sys.stderr)
-        else:
-            print(f"[OK] {u} -> model={model_id}")
-
     spec = yaml.safe_load(Path(args.spec).read_text())
     runs = expand_spec(spec)
+    urls = load_urls(args)
+    if args.no_probe and not args.dry_run:
+        sys.exit("--no-probe is allowed only with --dry-run")
+
+    matrix_models = {r.get("model") for r in runs if r.get("model")}
+    if len(matrix_models) > 1:
+        sys.exit(
+            "A matrix dispatched to one server pool must use one model; found: "
+            + ", ".join(sorted(matrix_models))
+        )
+    expected_model = next(iter(matrix_models), None)
+    servers: list[dict] = []
+    serving_fingerprint: str | None = None
+    if not args.no_probe:
+        for url in urls:
+            try:
+                server = probe_server(url)
+            except Exception as exc:
+                sys.exit(
+                    f"Serving preflight failed for {url}: {type(exc).__name__}: "
+                    f"{exc}. Formal dispatch requires /v1/models and "
+                    "/experiment-info."
+                )
+            servers.append(server)
+            info = server["experiment_info"]
+            print(
+                f"[OK] {url} -> model={info.get('model')} "
+                f"fingerprint={info.get('fingerprint')}"
+            )
+        try:
+            serving_fingerprint = validate_server_pool(servers, expected_model)
+        except ValueError as exc:
+            sys.exit(str(exc))
+
     title = spec.get("title") or Path(args.spec).stem
     root_log = Path(args.log_dir or spec.get("log_dir") or f"logs/{title}")
     root_log.mkdir(parents=True, exist_ok=True)
@@ -692,6 +862,7 @@ def main() -> int:
     manifest_path = write_manifest(
         spec=spec, spec_path=args.spec, args=args,
         urls=urls, runs=runs, root_log=root_log,
+        servers=servers, serving_fingerprint=serving_fingerprint,
     )
     print(f"  manifest:  {manifest_path}")
 
@@ -704,6 +875,7 @@ def main() -> int:
         "unhealthy_urls": set(),
         "eval_pending": 0,
         "eval_pool": None,
+        "fatal_error": None,
     }
     # Two-phase (agent → eval pool) is mandatory; --eval-pool-size is
     # validated >= 1 above, so the eval pool is always built.
@@ -741,7 +913,8 @@ def main() -> int:
         t = threading.Thread(
             target=worker_loop,
             args=(u, plan, root_log, tmp_log, lock, state,
-                  args.reset_prefix_cache, router, args.max_attempts),
+                  args.reset_prefix_cache, router, args.max_attempts,
+                  serving_fingerprint),
             daemon=False,
         )
         t.start()
@@ -751,6 +924,9 @@ def main() -> int:
 
     if eval_pool is not None:
         eval_pool.shutdown(wait=True)
+
+    if state.get("fatal_error"):
+        sys.exit(state["fatal_error"])
 
     c = state["counter"]
     print(f"\n=== DONE ===  done={c['done']}  "
