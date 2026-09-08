@@ -263,3 +263,21 @@ def create_agent(name: str, **kwargs):
             f"Unknown agent: {name}. Available: {sorted(AGENT_REGISTRY)}"
         )
     return AGENT_REGISTRY[name](**kwargs)
+
+
+def _disable_openai_platform_tracing() -> None:
+    """Eval runs talk to local vLLM with ``OPENAI_API_KEY=dummy``.
+
+    The Agents SDK still exports traces to api.openai.com by default,
+    which 401s and prints ``[non-fatal] Tracing client error 401``.
+    Our own call log / energy telemetry is the observability path.
+    """
+    try:
+        from agents import set_tracing_disabled
+
+        set_tracing_disabled(True)
+    except Exception:
+        pass
+
+
+_disable_openai_platform_tracing()

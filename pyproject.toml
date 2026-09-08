@@ -9,13 +9,20 @@ description = "Efficient multi-agent systems for software engineering benchmarks
 requires-python = ">=3.10"
 dependencies = [
     "httpx>=0.27.0",
+    "openai-agents>=0.20.0,<0.21",
+    "rank-bm25>=0.2.2",
+    "openhands>=1.16.0; python_version == '3.12'",
+    "openhands>=0.0.0; python_version != '3.12'",
     "pyyaml>=6.0.0",
 ]
 
 [project.optional-dependencies]
 swe-bench = [
     "datasets>=2.0.0",
-    "swebench>=3.0.0",
+    # 5.x rewrote make_test_spec to require instance['image']/eval_script,
+    # which princeton-nlp/SWE-bench_Verified does not have. Pin to the last
+    # harness that grades the official prebuilt sweb.eval.* images.
+    "swebench>=3.0.0,<5",
 ]
 swe-bench-live = [
     # Runtime deps of the vendored microsoft/SWE-bench-Live harness — only
@@ -38,7 +45,10 @@ swe-bench-live = [
 # plus a remote-docker SSH transport (distributed eval).
 all = [
     "datasets>=2.0.0",
-    "swebench>=3.0.0",
+    # 5.x rewrote make_test_spec to require instance['image']/eval_script,
+    # which princeton-nlp/SWE-bench_Verified does not have. Pin to the last
+    # harness that grades the official prebuilt sweb.eval.* images.
+    "swebench>=3.0.0,<5",
     "docker>=7.0.0",
     "pydantic>=2.0.0",
     "pyarrow>=20.0.0",

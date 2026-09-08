@@ -51,8 +51,9 @@ so no `aci_editor/` copy is vendored here.)
 ### `openhands_legacy_vendored/`
 Source: https://github.com/All-Hands-AI/OpenHands @ `COMMIT_PIN.txt`
 - `bash.py` + `bash_constants.py` — the V0 persistent-shell bash session.
-  Imported at runtime by `src/eval_pipeline/utils/docker.py` and
-  `utils/_bash_helpers.py`.
+  Algorithmic reference for `src/eval_pipeline/utils/docker.py` and
+  `utils/_bash_helpers.py`. Not imported at runtime: the file depends
+  on OpenHands V0 (`openhands.core`), which the V1 SDK does not provide.
 
 ## Usage pattern
 
