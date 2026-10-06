@@ -46,7 +46,10 @@ FIELDS = ["block", "model", "role", "bout", "boutb", "be", "beb",
 
 
 def _role_of(agent_id: str) -> str:
-    return re.sub(r"_\d+$", "", agent_id)
+    # Persistent roles are planner_0 / orchestrator_0; ephemeral roles are
+    # navigator-<hex> / executor-<hex> (see MAS runner IDs).
+    s = re.sub(r"_\d+$", "", agent_id)
+    return re.sub(r"-[0-9a-fA-F]{4,}$", "", s)
 
 
 def _load_per_episode() -> dict:

@@ -54,6 +54,8 @@ def main() -> None:
             for _, agent_cls in METHODS
             if (model, agent_cls) in stats
         ]
+        if not backbone:
+            continue
         best = {key: min(s[key] for s in backbone) for key, _, _ in COLUMNS}
         for label, agent_cls in METHODS:
             s = stats.get((model, agent_cls))

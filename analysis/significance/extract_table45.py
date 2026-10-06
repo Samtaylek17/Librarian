@@ -13,7 +13,9 @@ from scripts.episode_meta import extract_one, _collect_episode_paths  # noqa: E4
 
 DEFAULT_OUT = Path(_REPO) / "analysis" / "data" / "table45_episodes.jsonl"
 DIRS = {
-    "35B-A3B": ["qwen36_35b_a3b_500_3agents", "caveman_500_2agents_seed0"],
+    # Combined 11-agent 35B matrix (this checkout). Older paper archives split
+    # the same methods across qwen36_35b_a3b_500_3agents + caveman_500_2agents_seed0.
+    "35B-A3B": ["qwen36_35b_a3b_500", "qwen36_35b_a3b_500_3agents", "caveman_500_2agents_seed0"],
     "27B":     ["qwen36_27b_fp8_500_5agents", "caveman_lastn_27b_500_6agents_seed0"],
 }
 # method (agent_dir sans _seed) -> (family, label)
@@ -59,10 +61,20 @@ def one(args):
 
 def main():
     jobs = []
+    seen: set[str] = set()
     for model, dirs in DIRS.items():
         for d in dirs:
-            paths = _collect_episode_paths((Path(log_dir(d)),))
-            jobs += [(model, str(p)) for p in paths]
+            try:
+                root = Path(log_dir(d))
+            except FileNotFoundError:
+                print(f"skip missing log dir {d!r}", file=sys.stderr)
+                continue
+            for p in _collect_episode_paths((root,)):
+                key = str(p.resolve())
+                if key in seen:
+                    continue
+                seen.add(key)
+                jobs.append((model, str(p)))
     print(f"collecting {len(jobs)} episodes...", file=sys.stderr)
     out = []
     with ProcessPoolExecutor(max_workers=16) as ex:

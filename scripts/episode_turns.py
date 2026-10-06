@@ -1,3 +1,4 @@
+"""Extract one CSV row per LLM call from SWEBenchEvaluator_*.json files."""
 from __future__ import annotations
 
 import argparse
@@ -10,12 +11,31 @@ from multiprocessing import Pool
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from scripts._turn_compat import normalize_call  # noqa: E402
-from scripts.episode_meta import _collect_episode_paths, identify_method  # noqa: E402
-from scripts.redundancy_analysis import (  # noqa: E402
+from analysis.redundancy_analysis import (  # noqa: E402
     extract_actions, _canonical_aid,
 )
-from scripts.redundancy_full import _overlap  # noqa: E402
+from scripts._turn_compat import normalize_call  # noqa: E402
+from scripts.episode_meta import _collect_episode_paths, identify_method  # noqa: E402
+
+# LastN / Caveman reuse the base runner class in Evaluator JSON; remap so
+# analysis/_common.py can tell the variants apart (same map as tokenefficiency).
+METHOD_TO_AGENT = {
+    "vanilla": "VanillaRunner",
+    "hyperagent": "HyperAgentMASRunner",
+    "hyperagent_librarian": "HyperAgentLibrarianMASRunner",
+    "hyperagent_lastn": "HyperAgentLastNRunner",
+    "hyperagent_caveman": "HyperAgentCavemanRunner",
+    "hyperagent_librarian_caveman": "HyperAgentCavemanLibRunner",
+    "boad": "BOADMASRunner",
+    "boad_librarian": "BOADLibrarianMASRunner",
+    "boad_lastn": "BOADLastNRunner",
+    "boad_caveman": "BOADCavemanRunner",
+    "boad_librarian_caveman": "BOADCavemanLibRunner",
+}
+
+
+def _overlap(s, e, ps, pe):
+    return s <= pe and e >= ps
 
 
 COLUMNS = [
@@ -42,7 +62,7 @@ def extract_turns(path: Path) -> list[list]:
 
     matrix_root, agent_dir, method = identify_method(path)
     model = d.get("model")
-    agent_cls = d.get("agent")
+    agent_cls = METHOD_TO_AGENT.get(method, d.get("agent"))
     task_id = d.get("task_id")
     seed = d.get("seed")
     ts = d.get("timestamp")

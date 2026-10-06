@@ -28,6 +28,7 @@ commented-out or never-included artifacts have been removed.)
 
 | Paper artifact                                        | Script                       |
 |-------------------------------------------------------|------------------------------|
+| Comparison-ready episode CSVs                        | `summarize_episodes.py`       |
 | Table 1 — main results (Pass / Out tok / Energy)      | `main_table.py`              |
 | Table — per-episode energy by difficulty (+ bins)     | `difficulty_bins.py`         |
 | Table — retrieval comparison (Lib vs BM25 / SFR)      | `retrieval_comparison.py`    |
@@ -68,7 +69,10 @@ export EPISODE_LOG_PATH=/data/librarian_logs:$PWD/logs
 python scripts/episode_meta.py  logs/qwen36_35b_a3b_500_3agents [...]  --out analysis/data/episodes.csv
 python scripts/episode_turns.py logs/qwen36_35b_a3b_500_3agents [...]  --out analysis/data/turns.csv
 
-# 2. tables / figures (run from the repo root)
+# 2. comparison-ready method and task CSVs
+python analysis/summarize_episodes.py
+
+# 3. tables / figures (run from the repo root)
 python analysis/main_table.py
 python analysis/difficulty_bins.py
 # ... etc.

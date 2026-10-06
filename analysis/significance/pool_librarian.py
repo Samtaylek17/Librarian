@@ -50,45 +50,44 @@ def analyse(label, blocks):
 
 MODELS = ["35B-A3B", "27B"]; FAMS = ["HyperAgent", "BOAD"]
 
-print("="*120)
-print("A. Librarian ADDED TO BASE MAS  (base -> +Librarian), per cell + pooled")
-print("="*120)
-blocks = []
-for m in MODELS:
-    for f in FAMS:
-        base = f
-        bl = pairs(m, f, base, "+Librarian")
-        analyse(f"  {m}/{f}: {base} -> +Librarian", [bl]); blocks.append(bl)
-analyse(">> POOLED (4 settings, ~2000 pairs)", blocks)
 
-print("\n" + "="*120)
-print("B. Librarian ADDED ON TOP OF CAVEMAN  (+Caveman -> +Caveman+Librarian), per cell + pooled")
-print("="*120)
-blocks = []
-for m in MODELS:
-    for f in FAMS:
-        bl = pairs(m, f, "+Caveman", "+Caveman+Librarian")
-        analyse(f"  {m}/{f}: +Caveman -> +Caveman+Librarian", [bl]); blocks.append(bl)
-analyse(">> POOLED (4 settings)", blocks)
+def run_block(title, pair_fn, pooled_label):
+    print("\n" + "=" * 120)
+    print(title)
+    print("=" * 120)
+    blocks = []
+    for m in MODELS:
+        for f in FAMS:
+            bl = pair_fn(m, f)
+            if len(bl[0]) == 0:
+                print(f"  skip {m}/{f} (no paired tasks)")
+                continue
+            analyse(f"  {m}/{f}", [bl])
+            blocks.append(bl)
+    if blocks:
+        analyse(pooled_label, blocks)
 
-print("\n" + "="*120)
-print("C. Caveman ADDED TO BASE MAS  (base -> +Caveman), per cell + pooled")
-print("="*120)
-blocks = []
-for m in MODELS:
-    for f in FAMS:
-        bl = pairs(m, f, f, "+Caveman")
-        analyse(f"  {m}/{f}: {f} -> +Caveman", [bl]); blocks.append(bl)
-analyse(">> POOLED (4 settings)", blocks)
-print("\n" + "="*120)
-print("D. FULL EFFICIENCY CONFIG vs BASE  (base -> +Caveman+Librarian), per cell + pooled")
-print("="*120)
-blocks = []
-for m in MODELS:
-    for f in FAMS:
-        bl = pairs(m, f, f, "+Caveman+Librarian")
-        analyse(f"  {m}/{f}: {f} -> +Caveman+Librarian", [bl]); blocks.append(bl)
-analyse(">> POOLED (4 settings)", blocks)
+
+run_block(
+    "A. Librarian ADDED TO BASE MAS  (base -> +Librarian), per cell + pooled",
+    lambda m, f: pairs(m, f, f, "+Librarian"),
+    ">> POOLED",
+)
+run_block(
+    "B. Librarian ADDED ON TOP OF CAVEMAN  (+Caveman -> +Caveman+Librarian), per cell + pooled",
+    lambda m, f: pairs(m, f, "+Caveman", "+Caveman+Librarian"),
+    ">> POOLED",
+)
+run_block(
+    "C. Caveman ADDED TO BASE MAS  (base -> +Caveman), per cell + pooled",
+    lambda m, f: pairs(m, f, f, "+Caveman"),
+    ">> POOLED",
+)
+run_block(
+    "D. FULL EFFICIENCY CONFIG vs BASE  (base -> +Caveman+Librarian), per cell + pooled",
+    lambda m, f: pairs(m, f, f, "+Caveman+Librarian"),
+    ">> POOLED",
+)
 
 print("\nNote: pooling treats each (task,setting) as an independent paired block. Task ids")
 print("recur across model/family settings, so the pool has mild positive dependence ->")
